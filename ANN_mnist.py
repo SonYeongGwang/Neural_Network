@@ -5,7 +5,7 @@ from PIL import Image
 import matplotlib.pyplot as plt
 
 class NeuralNetwork:
-    print("h")
+
     def __init__(self, inputnodes, hiddennodes, outputnodes, learingrate, training):
         self.inodes = inputnodes
         self.onodes = outputnodes
