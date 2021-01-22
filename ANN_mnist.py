@@ -1,14 +1,11 @@
 import numpy as np
 import scipy.special as scp
 import os
-from PIL import Image
 import matplotlib.pyplot as plt
 
-
-print("test")
 class NeuralNetwork:
     
-    def __init__(self, inputnodes, hiddennodes, outputnodes, learingrate, training):
+    def __init__(self, inputnodes, hiddennodes, outputnodes, learingrate, training=False):
         self.inodes = inputnodes
         self.onodes = outputnodes
         self.hnodes = hiddennodes
@@ -19,6 +16,7 @@ class NeuralNetwork:
         self.activation_function = lambda x: scp.expit(x)
 
     def train(self, inputs_list, targets_list):
+
         inputs = np.array(inputs_list, ndmin=2).T
         targets = np.array(targets_list, ndmin=2).T
         hidden_inputs = np.dot(self.W_ih, inputs)
@@ -34,6 +32,7 @@ class NeuralNetwork:
 
         self.W_ih += self.lr * np.dot((hidden_errors * hidden_outputs * (1.0 - hidden_outputs)),
                                       np.transpose(inputs))
+        return output_errors**2
 
     def query(self, inputs_list):
         inputs = np.array(inputs_list, ndmin=2).T
@@ -83,28 +82,43 @@ class NeuralNetwork:
 input_nodes = 784
 hidden_nodes = 100
 output_nodes = 10
-learning_rate = 0.2
-
-n = NeuralNetwork(input_nodes, hidden_nodes, output_nodes, learning_rate, training=False)
+learning_rate = 0.1
+losses = []
+total_loss = []
+n = NeuralNetwork(input_nodes, hidden_nodes, output_nodes, learning_rate, training=True)
 
 if n.reTrain():
 
-    epoch = 5
+    epoch = 10
     training_data_file = open("C:/Users/Son YeongGwang/OneDrive/바탕 화면/mnist_train.csv", "r")
     training_data_list = training_data_file.readlines()
+    training_data_list_2d = np.array(training_data_list, ndmin=2)
     training_data_file.close()
-
+    i = 0
     for e in range(epoch):
-        for record in training_data_list:
+        i = i + 1
 
+        for j, record in enumerate(training_data_list):
             all_values = record.split(',')
-
             inputs = (np.asfarray(all_values[1:]) / 255.0 * 0.99) + 0.01
             targets = np.zeros(output_nodes) + 0.01
             targets[int(record[0])] = 0.99
+            if j == 0 or j % 1000 == 0:
+                print("[INFO] Training Model...Total {}/{} in {:.2f}%".format(i, epoch, (j / len(training_data_list_2d[0]) * 100)))
 
-            n.train(inputs, targets)
+            loss = n.train(inputs, targets)
+            losses.append(loss)
+
+        total_loss.append(np.sum(losses) / len(losses))
     n.save()
+
+    plt.style.use("ggplot")
+    plt.figure()
+    plt.plot(np.arange(0, epoch), total_loss)
+    plt.title("Training Loss")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.show()
 
 else:
     n.load()
@@ -121,8 +135,8 @@ for record in testing_data_list:
     test_input = np.asfarray(test_values[1:])
 
     # image_array = np.asfarray(test_values[1:]).reshape(28, 28)
-    print("Input Number  :", test_values[0])
-    print("Prediction    :", np.argmax(n.query(test_input)), "\n")
+    # print("Input Number  :", test_values[0])
+    # print("Prediction    :", np.argmax(n.query(test_input)), "\n")
 
     if int(test_values[0]) == np.argmax(n.query(test_input)):
         scorecard.append(1)
@@ -132,8 +146,9 @@ for record in testing_data_list:
 # print(scorecard)
 print("accuracy: "+str(np.mean(scorecard)*100)+"%\n")
 
-image_array = np.asfarray(Image.open("C:/Users/Son YeongGwang/OneDrive/바탕 화면/test.png").convert('L'))
-image_data = 255.0 - image_array.reshape(784)
-image_data = (image_data / 255 * 0.99) + 0.01
-
-print("NN says:", np.argmax(n.query(image_data)))
+## Testing from personal data
+# image_array = np.asfarray(Image.open("C:/Users/Son YeongGwang/OneDrive/바탕 화면/test.png").convert('L'))
+# image_data = 255.0 - image_array.reshape(784)
+# image_data = (image_data / 255 * 0.99) + 0.01
+#
+# print("NN says:", np.argmax(n.query(image_data)))
